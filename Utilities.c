@@ -1030,18 +1030,33 @@ int saveGame(char board[BOARD_SIZE][BOARD_SIZE], char* filename, color current_p
 		return 0;
 	}
 
-	/* saving type of game */
-	strcpy(stringToWrite, "\t<type>");
-	l = strlen(stringToWrite);
-	stringToWrite[l] = game_mode + 48;
-	stringToWrite[l + 1] = '\0';
-	strcat(stringToWrite, "</type>\n");
+	/* saving color of current player */
+	strcpy(stringToWrite, "\t<next_turn>");
+	if (current_player_color == WHITE)
+		strcat(stringToWrite, "White");
+	else{
+		strcat(stringToWrite, "Black");
+	}
+
+	strcat(stringToWrite, "</next_turn>\n");
 	if (fprintf(filePointer, "%s", stringToWrite) < 0){
 		fclose(filePointer);
 		return 0;
 	}
-	if (game_mode == 2) {
 
+
+	/* saving type of game */
+	strcpy(stringToWrite, "\t<game_mode>");
+	l = strlen(stringToWrite);
+	stringToWrite[l] = game_mode + 48;
+	stringToWrite[l + 1] = '\0';
+	strcat(stringToWrite, "<//game_mode>\n");
+	if (fprintf(filePointer, "%s", stringToWrite) < 0){
+		fclose(filePointer);
+		return 0;
+	}
+	if (game_mode == 2) 
+	{
 		/* saving difficulty of game */
 		strcpy(stringToWrite, "\t<difficulty>");
 		l = strlen(stringToWrite);
@@ -1071,20 +1086,6 @@ int saveGame(char board[BOARD_SIZE][BOARD_SIZE], char* filename, color current_p
 			fclose(filePointer);
 			return 0;
 		}
-	}
-
-	/* saving color of current player */
-	strcpy(stringToWrite, "\t<next_turn>");
-	if (current_player_color == WHITE)
-		strcat(stringToWrite, "White");
-	else{
-		strcat(stringToWrite, "Black");
-	}
-
-	strcat(stringToWrite, "</next_turn>\n");
-	if (fprintf(filePointer, "%s", stringToWrite) < 0){
-		fclose(filePointer);
-		return 0;
 	}
 
 	/* saving the board */
@@ -1147,7 +1148,6 @@ int saveGame(char board[BOARD_SIZE][BOARD_SIZE], char* filename, color current_p
 	return 1;
 }
 
-
 /*
 the function gets a board, a file name and a color pointer
 and loads the game (current_player_color will point to the color of next player to play)
@@ -1183,6 +1183,33 @@ int loadGame(char board[BOARD_SIZE][BOARD_SIZE], char* filename, color current_p
 		return 0;
 	}
 
+	/* loading color of current player */
+	if (fgets(stringToRead, STRING_SIZE - 1, filePointer) == NULL){
+		fclose(filePointer);
+		return 0;
+	}
+
+	/* checking if this line is really "next_turn" */
+	substringFromString(tempStr, 2, 10, stringToRead);
+
+	if (strcmp(tempStr, "next_turn") == 0){
+
+		/* stringToRead[11] can either be 'W' (for white) or B (for black) */
+		if (stringToRead[12] == 'W')
+			current_player_color = WHITE;
+		else
+			current_player_color = BLACK;
+	}
+	else {
+		/* in AI, we assume that the current player color is equal to the user_color */
+		if (game_mode == 1){
+			/* default value */
+			current_player_color = WHITE;
+			fseek(filePointer, -1, SEEK_CUR);
+		}
+		fseek(filePointer, -1, SEEK_CUR);
+	}
+
 	/* trying to load type of game */
 	if (fgets(stringToRead, STRING_SIZE - 1, filePointer) == NULL){
 		fclose(filePointer);
@@ -1190,15 +1217,17 @@ int loadGame(char board[BOARD_SIZE][BOARD_SIZE], char* filename, color current_p
 	}
 
 	/* checking if this line is really "type" */
-	substringFromString(tempStr, 2, 5, stringToRead);
+	substringFromString(tempStr, 2, 10, stringToRead);
 
 
-	if (strcmp(tempStr, "type") == 0){
+	if (strcmp(tempStr, "game_mode") == 0)
+	{
 
 		/* stringToRead[6] can either be '1' or '2' */
-		game_mode = stringToRead[7] - 48;
+		game_mode = stringToRead[12] - 48;
 
-		if (game_mode == 2) {
+		if (game_mode == 2)
+		{
 
 			/* loading difficulty of game */
 			if (fgets(stringToRead, STRING_SIZE - 1, filePointer) == NULL){
@@ -1255,49 +1284,39 @@ int loadGame(char board[BOARD_SIZE][BOARD_SIZE], char* filename, color current_p
 				current_player_color = WHITE;
 				fseek(filePointer, -1, SEEK_CUR);
 			}
+			/* not interesting line   (<board>) */
+			if (fgets(stringToRead, STRING_SIZE - 1, filePointer) == NULL){
+				fclose(filePointer);
+				return 0;
+			}
 		}
-	}
-	else{
-		/* default value */
-		game_mode = 1;
-		fseek(filePointer, -1, SEEK_CUR);
-	}
-
-	/* loading color of current player */
-	if (fgets(stringToRead, STRING_SIZE - 1, filePointer) == NULL){
-		fclose(filePointer);
-		return 0;
-	}
-
-	/* checking if this line is really "next_turn" */
-	substringFromString(tempStr, 2, 10, stringToRead);
-
-	if (strcmp(tempStr, "next_turn") == 0){
-
-		/* stringToRead[11] can either be 'W' (for white) or B (for black) */
-		if (stringToRead[12] == 'W')
-			current_player_color = WHITE;
 		else
-			current_player_color = BLACK;
-	}
-	else {
-		/* in AI, we assume that the current player color is equal to the user_color */
-		if (game_mode == 1){
+		{
 			/* default value */
-			current_player_color = WHITE;
+			game_mode = 1;
 			fseek(filePointer, -1, SEEK_CUR);
+
+			while (1)
+			{
+				//go all the way to the board line
+				if (fgets(stringToRead, STRING_SIZE - 1, filePointer) == NULL){
+					fclose(filePointer);
+					return 0;
+				}
+
+				substringFromString(tempStr, 2, 6, stringToRead);
+				if (strcmp(tempStr, "board") == 0)
+				{
+					break;
+				}
+			}
 		}
-		fseek(filePointer, -1, SEEK_CUR);
 	}
+
+
 
 
 	/* loading the board */
-
-	/* not interesting line   (<board>) */
-	if (fgets(stringToRead, STRING_SIZE - 1, filePointer) == NULL){
-		fclose(filePointer);
-		return 0;
-	}
 
 
 	for (i = 0; i < BOARD_SIZE; i++){
@@ -1331,7 +1350,3 @@ int loadGame(char board[BOARD_SIZE][BOARD_SIZE], char* filename, color current_p
 
 	return 1;
 }
-
-
-
-
