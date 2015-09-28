@@ -1120,8 +1120,7 @@ void user_turn(char board[BOARD_SIZE][BOARD_SIZE], color current_player_color){
 				/* getting the filename  */
 				
 
-				if (!saveGame(board, iter, current_player_color))
-				{
+				if (!saveGame(board, iter, current_player_color)){
 					print_message(WRONG_FILE);
 					continue;
 				}
