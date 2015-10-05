@@ -24,26 +24,38 @@ struct memList
 	struct memNode* head;
 };
 
-
-
-
-struct checker{
+struct checker
+{
 	char x;
 	int  y;
 };
 typedef struct checker checker;
 
-struct RelativeMove
+struct Place
 {
-	int move[2];
-}; typedef struct RelativeMove RelativeMove;
+	char x;
+	int y;
+}; typedef struct Place Place;
 
-struct legalMovesRepository{
-	int size;
-	int pos;
-	char **legalMoves;
-};
-typedef struct legalMovesRepository legalMovesRepository;
+struct Node
+{
+	Place fromPlace[2];
+	Place toPlace[2];
+}; typedef struct Node Node;
+
+struct NodeList
+{
+	Node head;
+	Node next;
+}; typedef struct NodeList NodeList;
+
+
+struct legalMovesRepository
+{
+	int listSize;
+	Place srcPlace;
+	NodeList  moveList;
+}; typedef struct legalMovesRepository legalMovesRepository;
 
 struct treeNode
 {
@@ -124,11 +136,7 @@ extern int initDepth;
 typedef enum
 {
 	TURN_MESSAGE,
-	INVALID_MOVE,
-	RESET_MSGBOX,
-	CHECK,
-	WHITE_MATE,
-	BLACK_MATE
+	INVALID_MOVE
 }messageType;
 
 

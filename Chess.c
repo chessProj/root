@@ -143,10 +143,10 @@ GUI_RESTART:
 		while (1 && !gameState)
 		analyzeCommand(board);
 		//current_player_color = settings_state(board);
-		board[0][6] = WHITE_P;
-		board[0][7] = EMPTY;
-		board[1][7] = EMPTY;
-		board[1][6] = EMPTY;
+		//board[0][6] = WHITE_P;
+		//board[0][7] = EMPTY;
+		//board[1][7] = EMPTY;
+		//board[1][6] = EMPTY;
 		print_board_(board);
 		game_state(board, current_player_color);
 	}
@@ -741,7 +741,6 @@ void game_state(char board[BOARD_SIZE][BOARD_SIZE], color current_player_color)
 	addRepToArrayOfReps(rep);
 
 
-
 	getAllLegalMoves(board, OPPOSITE_COLOR(current_player_color), rep, 1, 0);
 	/* checking for a loaded win game */
 	if (rep->size == 0){
@@ -750,7 +749,8 @@ void game_state(char board[BOARD_SIZE][BOARD_SIZE], color current_player_color)
 				printf("Mate! White player wins the game\n");
 			else
 			{
-				guiWinMessage(WHITE, board, current_player_color); /* black won */ //TODO: change guiWinMessage
+				//guiWinMessage(WHITE, board, current_player_color); /* black won */ //TODO: change guiWinMessage
+				setMessageToUser(WHITE, WHITE_MATE);
 			}
 		}
 		else{
@@ -759,6 +759,7 @@ void game_state(char board[BOARD_SIZE][BOARD_SIZE], color current_player_color)
 			else
 			{
 				guiWinMessage(BLACK, board, current_player_color); /* white won  */
+				setMessageToUser(WHITE, BLACK_MATE);
 			}
 		}
 		freeAllRepositories();
@@ -807,14 +808,14 @@ void game_state(char board[BOARD_SIZE][BOARD_SIZE], color current_player_color)
 				if (GUI != 1)
 					printf("Mate! Black player wins the game\n");
 				else{
-					guiWinMessage(BLACK, board, current_player_color); /* black won */
+					setMessageToUser(current_player_color, BLACK_MATE); /* black won */
 				}
 			}
 			else{
 				if (GUI != 1)
 					printf("Mate! White player wins the game\n");
 				else{
-					guiWinMessage(WHITE, board, current_player_color); /* white won  */
+					setMessageToUser(current_player_color, WHITE_MATE); /* white won  */
 				}
 			}
 
@@ -829,8 +830,9 @@ void game_state(char board[BOARD_SIZE][BOARD_SIZE], color current_player_color)
 				if (GUI != 1)
 					printf("Check!\n");
 				else
-					guiCheckMessage(board);
+					setMessageToUser(current_player_color, CHECK);
 			}
+
 		}
 
 		freeRepository(rep);
@@ -1120,7 +1122,8 @@ void user_turn(char board[BOARD_SIZE][BOARD_SIZE], color current_player_color){
 				/* getting the filename  */
 				
 
-				if (!saveGame(board, iter, current_player_color)){
+				if (!saveGame(board, iter, current_player_color))
+				{
 					print_message(WRONG_FILE);
 					continue;
 				}
@@ -1157,8 +1160,8 @@ void computer_turn(char board[BOARD_SIZE][BOARD_SIZE], color current_player_colo
 
 		PC_Color = OPPOSITE_COLOR(user_color);
 
-		while (nodeNum < MAX_NODES){
-
+		while (nodeNum < MAX_NODES)
+		{
 			initDepth = depth;
 			bestValue = getBestScoreBybuildingGameTree(board, depth, PC_Color, PC_Color, NULL, NULL, 0, -1 * INF, INF, 1);
 			if (nodeNum < MAX_NODES){
@@ -2052,6 +2055,7 @@ void guiLoadScreen(char board[BOARD_SIZE][BOARD_SIZE], color current_player_colo
 							}
 						}
 						if ((x >= 110) && (x <= 160) && (y >= 620) && (y <= 670)) //btnBackPressed
+							guiMainMenu(board, current_player_color_pointer);
 							return;
 					}
 					break;
@@ -2827,7 +2831,7 @@ int guiGetSaveSlot()
 /* gets move from user clicks, return char* of move
 * returns NULL on quit
 */
-char * guiGetMove(char board[BOARD_SIZE][BOARD_SIZE], color current_player_color)
+char * guiGetMove(char board[BOARD_SIZE][BOARD_SIZE], color current_player_color, legalMovesRepository * rep)
 {
 	SDL_Surface *checkerChosen = NULL;
 	SDL_Event event;
@@ -2875,7 +2879,6 @@ char * guiGetMove(char board[BOARD_SIZE][BOARD_SIZE], color current_player_color
 						move[17] = (char)(48 + pos_y);
 
 						setBoard(board, 0, gameBoardX, gameBoardY);
-
 						return move;
 					}
 					pos_w = pos_x;/* save odd click location */
@@ -2883,6 +2886,20 @@ char * guiGetMove(char board[BOARD_SIZE][BOARD_SIZE], color current_player_color
 
 					checkerChosen = load_image("selectedPlace.png", 0);
 					//TODO: mark available moves
+
+					char * tempDest = malloc(3);
+					char * tempSrc = malloc(3);
+					for (int i = 0; i < rep->size; i++)
+					{
+						tempDest = strncpy(tempDest, rep->legalMoves[i] + 10, 3);
+						tempSrc = strncpy(tempSrc, rep->legalMoves[i] + 1, 3);
+						if ((pos_w == tempSrc[0] - 96) && (pos_z == tempSrc[2]-48))
+						{
+							apply_surface(((tempDest[0]-97) * 60) + gameBoardX, ((8 - (tempDest[2]-48)) * 60) + gameBoardY, checkerChosen, screen, NULL);
+						}
+					}
+					free(tempDest);
+					free(tempSrc);
 					apply_surface(((pos_x-1) * 60) + gameBoardX, ((8 - pos_y) * 60) + gameBoardY, checkerChosen, screen, NULL);
 					setBoard(board, 1, gameBoardX, gameBoardY); /* set only pieces, not board itself */
 					SDL_FreeSurface(checkerChosen);
@@ -2943,7 +2960,8 @@ char * guiGetMove(char board[BOARD_SIZE][BOARD_SIZE], color current_player_color
 
 }
 
-char * choosePromotion(){
+char * choosePromotion()
+{
 
 
 	char *result = allocWrapper(calloc(10, sizeof(char)), "calloc");
@@ -2953,7 +2971,7 @@ char * choosePromotion(){
 
 
 	tools = load_image("sprites3.png", 1);
-	background = load_image("mainBackground.png", 0);
+	background = load_image("defaultBackground.png", 0);
 
 	apply_surface(0, 0, background, screen, NULL);
 	apply_surface(300, 300, tools, screen, &clip[3]);/* knight */
@@ -2969,7 +2987,8 @@ char * choosePromotion(){
 
 	while (!done){
 
-		while (SDL_PollEvent(&event)){
+		while (SDL_PollEvent(&event))
+		{
 			switch (event.type){
 
 			case SDL_QUIT: done = 1;
@@ -3051,7 +3070,8 @@ void guiUserTurn(char board[BOARD_SIZE][BOARD_SIZE], color current_player_color)
 	{ /* loop. incase of error, we get to try again */
 		/* get move */
 		setMessageToUser(current_player_color,TURN_MESSAGE);
-		temp = guiGetMove(board, current_player_color);
+		temp = guiGetMove(board, current_player_color,rep);
+		setMessageToUser(WHITE, RESET_MSGBOX);
 		if (temp == NULL){
 			/* we got NULL, this means we hit quit or x in the getMove window */
 			break;
@@ -3061,8 +3081,8 @@ void guiUserTurn(char board[BOARD_SIZE][BOARD_SIZE], color current_player_color)
 
 
 
-		if (theMove == NULL){
-
+		if (theMove == NULL)
+		{
 			setMessageToUser(WHITE,INVALID_MOVE);
 			continue;
 		}
@@ -3070,8 +3090,8 @@ void guiUserTurn(char board[BOARD_SIZE][BOARD_SIZE], color current_player_color)
 		/* check legal source checker */
 		strncpy(str, theMove, 5); /* str = source checker <x,y> */
 		srcChkr = stringToChecker(str);
-		if (srcChkr.y == 0){
-
+		if (srcChkr.y == 0)
+		{
 			setMessageToUser(WHITE, INVALID_MOVE);
 			continue;
 		}
@@ -3091,7 +3111,6 @@ void guiUserTurn(char board[BOARD_SIZE][BOARD_SIZE], color current_player_color)
 			((current_player_color == BLACK) &&
 			BLACK_TOOL(board[srcChkr.x - 97][srcChkr.y - 1]))))
 		{
-
 			setMessageToUser(WHITE,INVALID_MOVE); /* no tool in source checker */
 			continue;
 		}
@@ -3107,21 +3126,21 @@ void guiUserTurn(char board[BOARD_SIZE][BOARD_SIZE], color current_player_color)
 				break; /* x was hit in promotion screen */
 			strcat(theMove, temp);
 			free(temp);
-
-			guiSetMainStage(board,0);
+			//guiSetMainStage(board,current_player_color,0);
+			guiSetForGameState(board, current_player_color, 0);
 		}
 
 		/* checking if it a legal move by searching in the repository */
 
-		if (isItInRepository(rep, theMove) == 0){
-
+		if (isItInRepository(rep, theMove) == 0)
+		{
 			setMessageToUser(WHITE,INVALID_MOVE); /*move not in repository */
 			continue;
 
 		}
 
 		/* the move is legal - update the board */
-
+		setMessageToUser(current_player_color, RESET_MSGBOX);
 		simulateTurn(board, theMove, board);
 		/*setBoard(board,0);*/
 
@@ -3173,6 +3192,42 @@ void setMessageToUser(color nextColor, messageType msg)
 			illegalMove = load_image("Labels/lblIllegalMove.png", 0);
 			apply_surface(60, 600, illegalMove, screen, NULL);
 			SDL_FreeSurface(illegalMove);
+			refresh();
+			break;
+		}
+		case (RESET_MSGBOX) :
+		{
+			SDL_Surface *NoMessage= NULL;
+			NoMessage = load_image("Labels/lblNoMessage.png", 0);
+			apply_surface(60, 600, NoMessage, screen, NULL);
+			SDL_FreeSurface(NoMessage);
+			refresh();
+			break;
+		}
+		case (CHECK) :
+		{
+			SDL_Surface *checkMessage = NULL;
+			checkMessage = load_image("Labels/lblCheck.png", 0);
+			apply_surface(60, 600, checkMessage, screen, NULL);
+			SDL_FreeSurface(checkMessage);
+			refresh();
+			break;
+		}
+		case (WHITE_MATE):
+		{
+			SDL_Surface *checkMessage = NULL;
+			checkMessage = load_image("Labels/lblWhiteWon.png", 0);
+			apply_surface(60, 600, checkMessage, screen, NULL);
+			SDL_FreeSurface(checkMessage);
+			refresh();
+			break;
+		}
+		case(BLACK_MATE) :
+		{
+			SDL_Surface *checkMessage = NULL;
+			checkMessage = load_image("Labels/lblBlackWon.png", 0);
+			apply_surface(60, 600, checkMessage, screen, NULL);
+			SDL_FreeSurface(checkMessage);
 			refresh();
 			break;
 		}

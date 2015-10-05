@@ -377,7 +377,8 @@ void initArrayOfReps(){
 }
 
 /* gets a repository and adding it to the array in an empty spot. returns the position in the array */
-int addRepToArrayOfReps(legalMovesRepository* rep){
+int addRepToArrayOfReps(legalMovesRepository* rep)
+{
 	int i;
 	for (i = 0; i < NUM_OF_REPS; i++){
 		if (arrayOfReps[i] == NULL){
@@ -766,18 +767,22 @@ the function gets a board , and player color
 and prints all the legal moves the given player has.
 */
 
-void getAllLegalMoves(char board[BOARD_SIZE][BOARD_SIZE], color player_color, legalMovesRepository* rep, int checkThreat, int depthFlag){
+void getAllLegalMoves(char board[BOARD_SIZE][BOARD_SIZE], color player_color, legalMovesRepository* rep, int checkThreat, int depthFlag)
+{
 	int i, j;
 	checker srcChkr /*, rookChkr*/;
 
 	/* initializing the repository */
 	rep->size = 0;
-	for (i = 0; i < BOARD_SIZE; i++){
-		for (j = 0; j < BOARD_SIZE; j++){
+	for (i = 0; i < BOARD_SIZE; i++)
+	{
+		for (j = 0; j < BOARD_SIZE; j++)
+		{
 			if ((player_color == BLACK && BLACK_TOOL(board[i][j])) ||
-				(player_color == WHITE && WHITE_TOOL(board[i][j]))){
+				(player_color == WHITE && WHITE_TOOL(board[i][j])))
+			{
 				srcChkr.x = i + 97;
-				srcChkr.y = j + 1;
+				srcChkr.y = j+1;
 
 				/* go through all the possible checkers on board and try them as a destination*/
 				getLegalMoves(board, player_color, srcChkr, rep, checkThreat);
@@ -790,137 +795,257 @@ void getAllLegalMoves(char board[BOARD_SIZE][BOARD_SIZE], color player_color, le
 			}
 		}
 	}
-
+	int q = 5;
 }
 
 /* sub-method of getAllLegalMoves - scans all possible destinations */
 void getLegalMoves(char board[BOARD_SIZE][BOARD_SIZE], color player_color, checker srcChkr, legalMovesRepository* rep, int checkThreat){
-	int k = srcChkr.x - 97, l = srcChkr.y - 1;
+	int k = srcChkr.x - 97, l = srcChkr.y-1;
 	int i = k + l * 8, n, j;
 	checker dstChkr;
 	char str[STRING_SIZE];
 
-	if ((board[k][l] == BLACK_P) || (board[k][l] == WHITE_P)){
-		if (player_color == WHITE){
-			if ((k != 0) && (BLACK_TOOL(board[k - 1][l + 1]))){ /* eat left */
-				dstChkr.x = k - 1 + 97;
-				dstChkr.y = l + 1 + 1;
-
-				convertMoveToString(str, srcChkr, dstChkr);
-				if (isItLegal(board, str, player_color)){
-					if (l == 6){ /* promotion time */
-						addPromotionMoveToRep(str, rep);
+	if ((board[k][l] == BLACK_P) || (board[k][l] == WHITE_P))
+	{
+		if (player_color == WHITE)
+		{
+			for (int i = 0; i < 2; i++) //white eat
+			{
+				dstChkr.x = srcChkr.x + whitePawnEat[i].move[0];
+				dstChkr.y = srcChkr.y + whitePawnEat[i].move[1];
+				if (BLACK_TOOL(board[dstChkr.x - 97][dstChkr.y-1]))
+				{
+					if ((dstChkr.x>'h') || (dstChkr.x < 'a') || (dstChkr.y < 1) || (dstChkr.y>8))
+						continue;
+					else
+					{
+						convertMoveToString(str, srcChkr, dstChkr);
+						if (isItLegal(board, str, player_color,checkThreat)){
+							if (dstChkr.y==8)
+							{ /* promotion time */
+								addPromotionMoveToRep(str, rep);
+							}
+							else /* regular move */
+								addMoveToRepository(rep, str);
+						}
 					}
-					else /* regular move */
-						addMoveToRepository(rep, str);
 				}
-
 			}
-			if ((k != 7) && (BLACK_TOOL(board[k + 1][l + 1]))){ /* eat right */
-				dstChkr.x = k + 1 + 97;
-				dstChkr.y = l + 1 + 1;
-				/* Check legality */
-
-				convertMoveToString(str, srcChkr, dstChkr);
-				if (isItLegal(board, str, player_color)){
-					if (l == 6){ /* promotion time */
-						addPromotionMoveToRep(str, rep);
+			//white move
+			dstChkr.x = srcChkr.x + whitePawnMove.move[0];
+			dstChkr.y = srcChkr.y + whitePawnMove.move[1];
+			if (board[dstChkr.x - 97][dstChkr.y-1] == EMPTY)
+			{
+				if (!((dstChkr.x>'h') || (dstChkr.x < 'a') || (dstChkr.y < 1) || (dstChkr.y>8)))
+				{
+					convertMoveToString(str, srcChkr, dstChkr);
+					if (isItLegal(board, str, player_color,checkThreat))
+					{
+						if (dstChkr.y==8)
+						{ /* promotion time */
+							addPromotionMoveToRep(str, rep);
+						}
+						else /* regular move */
+							addMoveToRepository(rep, str);
 					}
-					else /* regular move */
-						addMoveToRepository(rep, str);
 				}
-
-			}
-			if (board[k][l + 1] == EMPTY){ /* walk forward */
-				dstChkr.x = k + 97;
-				dstChkr.y = l + 1 + 1;
-				/* Check legality */
-
-				convertMoveToString(str, srcChkr, dstChkr);
-				if (isItLegal(board, str, player_color)){
-					if (l == 6){ /* promotion time */
-						addPromotionMoveToRep(str, rep);
-					}
-					else /* regular move */
-						addMoveToRepository(rep, str);
-				}
-
-
 			}
 		}
-		else{
-			if ((k != 0) && (WHITE_TOOL(board[k - 1][l - 1]))){ /* eat left */
-				dstChkr.x = k - 1 + 97;
-				dstChkr.y = l - 1 + 1;
-				/* Check legality */
-
-				convertMoveToString(str, srcChkr, dstChkr);
-				if (isItLegal(board, str, player_color)){
-					if (l == 1){ /* promotion time */
-						addPromotionMoveToRep(str, rep);
+		else //moving black pawn
+		{
+			for (int i = 0; i < 2; i++) //black eat
+			{
+				dstChkr.x = srcChkr.x + blackPawnEat[i].move[0];
+				dstChkr.y = srcChkr.y + blackPawnEat[i].move[1];
+				if (WHITE_TOOL(board[dstChkr.x - 97][dstChkr.y-1]))
+				{
+					if (!((dstChkr.x>'h') || (dstChkr.x < 'a') || (dstChkr.y < 1) || (dstChkr.y>8)))
+					{
+						convertMoveToString(str, srcChkr, dstChkr);
+						if (isItLegal(board, str, player_color,checkThreat))
+						{
+							if (dstChkr.y == 1)
+							{ /* promotion time */
+								addPromotionMoveToRep(str, rep);
+							}
+							else /* regular move */
+								addMoveToRepository(rep, str);
+						}
 					}
-					else /* regular move */
-						addMoveToRepository(rep, str);
 				}
 			}
-			if ((k != 7) && (WHITE_TOOL(board[k + 1][l - 1]))){ /* eat right */
-				dstChkr.x = k + 1 + 97;
-				dstChkr.y = l - 1 + 1;
-				/* Check legality */
-
-				convertMoveToString(str, srcChkr, dstChkr);
-				if (isItLegal(board, str, player_color)){
-					if (l == 1){ /* promotion time */
-						addPromotionMoveToRep(str, rep);
+			//black move
+			dstChkr.x = srcChkr.x + blackPawnMove.move[0];
+			dstChkr.y = srcChkr.y + blackPawnMove.move[1];
+			if (board[dstChkr.x - 97][dstChkr.y-1] == EMPTY)
+			{
+				if (!((dstChkr.x>'h') || (dstChkr.x < 'a') || (dstChkr.y < 1) || (dstChkr.y>8)))
+				{
+					convertMoveToString(str, srcChkr, dstChkr);
+					if (isItLegal(board, str, player_color,checkThreat)){
+						if (dstChkr.y == 1)
+						{ /* promotion time */
+							addPromotionMoveToRep(str, rep);
+						}
+						else /* regular move */
+							addMoveToRepository(rep, str);
 					}
-					else /* regular move */
-						addMoveToRepository(rep, str);
 				}
-
-			}
-			if (board[k][l - 1] == EMPTY){ /* walk forward */
-				dstChkr.x = k + 97;
-				dstChkr.y = l - 1 + 1;
-				/* Check legality */
-
-				convertMoveToString(str, srcChkr, dstChkr);
-				if (isItLegal(board, str, player_color)){
-					if (l == 1){ /* promotion time */
-						addPromotionMoveToRep(str, rep);
-					}
-					else /* regular move */
-						addMoveToRepository(rep, str);
-				}
-
-
 			}
 		}
 
 	}
-	else{ /* not pawns */
-		for (j = 0; j < offsets[pieceToNum(board[k][l])]; ++j)
-		for (n = i;;){
-			n = mailbox[mailbox64[n] + offset[pieceToNum(board[k][l])][j]];
-			dstChkr.x = (n % 8) + 97;
-			dstChkr.y = (int)(n / 8) + 1;
-			convertMoveToString(str, srcChkr, dstChkr);
-			if (n == -1)
-				break; /*moved outside of board */
-			if (board[dstChkr.x - 97][dstChkr.y - 1] != EMPTY){
-				if ((player_color == WHITE && BLACK_TOOL(board[dstChkr.x - 97][dstChkr.y - 1])) ||
-					(player_color == BLACK && WHITE_TOOL(board[dstChkr.x - 97][dstChkr.y - 1]))){
-					/* check move legality */
-					if (isItLegal(board, str, player_color))
-						addMoveToRepository(rep, str); /* eating move */
+	else
+	{ /* not pawns */
+		switch (board[k][l])
+		{
+		case ('b'):
+		case('B') :
+		{
+			for (int i = 0; i < 28; i++)
+			{
+				dstChkr.x = srcChkr.x + bishopMove[i].move[0];
+				dstChkr.y = srcChkr.y + bishopMove[i].move[1];
+
+				if (!((dstChkr.x>'h') || (dstChkr.x < 'a') || (dstChkr.y < 1) || (dstChkr.y>8)))
+				{
+					convertMoveToString(str, srcChkr, dstChkr);
+					//make sure its eating or moving to an empty cell
+					if (!((WHITE_TOOL(board[dstChkr.x - 97][dstChkr.y-1])) && (WHITE_TOOL(board[srcChkr.x - 97][srcChkr.y-1])) ||
+						(BLACK_TOOL(board[dstChkr.x - 97][dstChkr.y-1])) && (BLACK_TOOL(board[srcChkr.x - 97][srcChkr.y-1]))))
+					{
+						if ((isItLegal(board, str, player_color, checkThreat) && checkIfPathIsClear(srcChkr, dstChkr, board)))
+							addMoveToRepository(rep, str); /* eating move */
+					}
+					
 				}
-				break;
+
 			}
-			/* check move legality */
-			if (isItLegal(board, str, player_color))
-				addMoveToRepository(rep, str); /* none eating move */
-			if (!slide[pieceToNum(board[k][l])]) /* if it doesnt slide */
-				break;
+			break;
 		}
+		case('r'):
+		case('R'):
+		{
+			for (int i = 0; i < 28; i++)
+			{
+				dstChkr.x = srcChkr.x + rookMove[i].move[0];
+				dstChkr.y = srcChkr.y + rookMove[i].move[1];
+
+				if (!((dstChkr.x>'h') || (dstChkr.x < 'a') || (dstChkr.y < 1) || (dstChkr.y>8)))
+				{
+					convertMoveToString(str, srcChkr, dstChkr);
+					//make sure its eating or moving to an empty cell
+					if (!((WHITE_TOOL(board[dstChkr.x - 97][dstChkr.y-1])) && (WHITE_TOOL(board[srcChkr.x - 97][srcChkr.y-1])) ||
+						(BLACK_TOOL(board[dstChkr.x - 97][dstChkr.y-1])) && (BLACK_TOOL(board[srcChkr.x - 97][srcChkr.y-1]))))
+					{
+						if (checkIfPathIsClear(srcChkr, dstChkr, board) && (isItLegal(board, str, player_color, checkThreat)))
+							addMoveToRepository(rep, str); /* eating move */
+					}
+
+				}
+
+			}
+			break;
+		}
+		case('n') :
+		case('N') :
+		{
+			for (int i = 0; i < 8; i++)
+			{
+				dstChkr.x = srcChkr.x + knightMove[i].move[0];
+				dstChkr.y = srcChkr.y + knightMove[i].move[1];
+
+				if (!((dstChkr.x>'h') || (dstChkr.x < 'a') || (dstChkr.y < 1) || (dstChkr.y>8)))
+				{
+					convertMoveToString(str, srcChkr, dstChkr);
+					//make sure its eating or moving to an empty cell
+					if (!((WHITE_TOOL(board[dstChkr.x - 97][dstChkr.y-1])) && (WHITE_TOOL(board[srcChkr.x - 97][srcChkr.y-1])) ||
+						(BLACK_TOOL(board[dstChkr.x - 97][dstChkr.y-1])) && (BLACK_TOOL(board[srcChkr.x - 97][srcChkr.y-1]))))
+					{
+						if (isItLegal(board, str, player_color, checkThreat))
+							addMoveToRepository(rep, str); /* eating move */
+					}
+
+				}
+
+			}
+			break;
+		}
+		case('q') :
+		case('Q') :
+		{
+			for (int i = 0; i < 56; i++)
+			{
+				dstChkr.x = srcChkr.x + queenMove[i].move[0];
+				dstChkr.y = srcChkr.y + queenMove[i].move[1];
+
+				if (!((dstChkr.x>'h') || (dstChkr.x < 'a') || (dstChkr.y < 1) || (dstChkr.y>8)))
+				{
+					convertMoveToString(str, srcChkr, dstChkr);
+					//make sure its eating or moving to an empty cell
+					if (!((WHITE_TOOL(board[dstChkr.x - 97][dstChkr.y-1])) && (WHITE_TOOL(board[srcChkr.x - 97][srcChkr.y-1])) ||
+						(BLACK_TOOL(board[dstChkr.x - 97][dstChkr.y-1])) && (BLACK_TOOL(board[srcChkr.x - 97][srcChkr.y-1]))))
+					{
+						if ((isItLegal(board, str, player_color, checkThreat) && checkIfPathIsClear(srcChkr, dstChkr, board)))
+							addMoveToRepository(rep, str); /* eating move */
+					}
+
+				}
+
+			}
+			break;
+		}
+		case('k') :
+		case('K') :
+		{
+			for (int i = 0; i < 4; i++)
+			{
+				dstChkr.x = srcChkr.x + kingMove[i].move[0];
+				dstChkr.y = srcChkr.y + kingMove[i].move[1];
+
+				if (!((dstChkr.x>'h') || (dstChkr.x < 'a') || (dstChkr.y < 1) || (dstChkr.y>8)))
+				{
+					convertMoveToString(str, srcChkr, dstChkr);
+					//make sure its eating or moving to an empty cell
+					if (!((WHITE_TOOL(board[dstChkr.x - 97][dstChkr.y-1])) && (WHITE_TOOL(board[srcChkr.x - 97][srcChkr.y-1])) ||
+						(BLACK_TOOL(board[dstChkr.x - 97][dstChkr.y-1])) && (BLACK_TOOL(board[srcChkr.x - 97][srcChkr.y-1]))))
+					{
+						if ((isItLegal(board, str, player_color, checkThreat) && checkIfPathIsClear(srcChkr, dstChkr, board)))
+							addMoveToRepository(rep, str); /* eating move */
+					}
+
+				}
+
+			}
+			break;
+		}
+		}
+
+
+
+		//for (j = 0; j < offsets[pieceToNum(board[k][l])]; ++j)
+		//for (n = i;;){
+		//	n = mailbox[mailbox64[n] + offset[pieceToNum(board[k][l])][j]];
+		//	dstChkr.x = (n % 8) + 97;
+		//	dstChkr.y = (int)(n / 8) + 1;
+		//	convertMoveToString(str, srcChkr, dstChkr);
+		//	if (n == -1)
+		//		break; /*moved outside of board */
+		//	if (board[dstChkr.x - 97][dstChkr.y - 1] != EMPTY){
+		//		if ((player_color == WHITE && BLACK_TOOL(board[dstChkr.x - 97][dstChkr.y - 1])) ||
+		//			(player_color == BLACK && WHITE_TOOL(board[dstChkr.x - 97][dstChkr.y - 1]))){
+		//			/* check move legality */
+//			if (isItLegal(board, str, player_color))
+//				addMoveToRepository(rep, str); /* eating move */
+//		}
+//		break;
+//	}
+//	/* check move legality */
+//	if ((isItLegal(board, str, player_color) && checkIfPathIsClear(srcChkr,dstChkr,board)))
+//		addMoveToRepository(rep, str); /* none eating move */
+//	if (!slide[pieceToNum(board[k][l])]) /* if it doesnt slide */
+//		break;
+
 
 
 	}
@@ -928,12 +1053,56 @@ void getLegalMoves(char board[BOARD_SIZE][BOARD_SIZE], color player_color, check
 
 }
 
+int returnNormilizedNumber(int num)
+{
+	if (num == 0)
+		return 0;
+	if (num > 0)
+	{
+		return 1;
+	}
+	else
+	{
+		return -1;
+	}
+}
+
+
+int checkIfPathIsClear(checker p1, checker p2, char board[BOARD_SIZE][BOARD_SIZE])
+{
+	//if ((p1.x == 8) && (p1.y == 10) && (p2.x == 3) && (p2.y == 5))
+	//{
+	//printf("Haalan");
+	//}
+	checker dstChkr = p2;
+	checker srcChkr = p1;
+	int dx = returnNormilizedNumber(p2.x - p1.x);
+	int dy = returnNormilizedNumber(p2.y - p1.y);
+	srcChkr.x = p1.x + dx;
+	srcChkr.y = p1.y + dy;
+	while ((srcChkr.x != dstChkr.x) || (srcChkr.y != dstChkr.y))
+	{
+		//if ((board[p1.x - 1][p1.y - 1].t != EMPTY) && (p1.x + dx != p2.x) && (p1.y + dy != p2.y))
+		if (board[srcChkr.x - 97][srcChkr.y - 1] != EMPTY)
+		{
+			return 0;
+		}
+		srcChkr.x = srcChkr.x + dx;
+		srcChkr.y = srcChkr.y + dy;
+	}
+	return 1;
+}
+
 /* is the king safe after i did a move */
-int isItLegal(char board[BOARD_SIZE][BOARD_SIZE], char *move, color c){
+int isItLegal(char board[BOARD_SIZE][BOARD_SIZE], char *move, color c, int checkThreat)
+{
 	char tempBoard[BOARD_SIZE][BOARD_SIZE];
 	int temp;
 	simulateTurn(board, move, tempBoard);
-	temp = isKingSafe(tempBoard, c);
+	if (checkThreat)
+		temp = isKingSafe(tempBoard, c);
+	else
+		return 1;
 
 	return temp;
 
@@ -942,59 +1111,84 @@ int isItLegal(char board[BOARD_SIZE][BOARD_SIZE], char *move, color c){
 int isKingSafe(char board[BOARD_SIZE][BOARD_SIZE], color c){
 	int i = 0, j = 0;
 	for (i = 0; i < BOARD_SIZE; i++)
-	for (j = 0; j< BOARD_SIZE; j++){
+		for (j = 0; j < BOARD_SIZE; j++){
 		if ((c == BLACK) && (board[i][j] == BLACK_K))
 			return !underAttack(i, j, board, OPPOSITE_COLOR(c));
 		if ((c == WHITE) && (board[i][j] == WHITE_K))
 			return !underAttack(i, j, board, OPPOSITE_COLOR(c));
-	}
+		}
 	return 1; /* never gets here */
 
 }
 
 /* is said square under attack by color attacker */
-int underAttack(int i, int j, char board[BOARD_SIZE][BOARD_SIZE], color attacker){
-	int k, l, n, m;
+int underAttack(int i, int j, char board[BOARD_SIZE][BOARD_SIZE], color attacker)
+{
+	legalMovesRepository re;
+	legalMovesRepository* rep = &re;
 
-	for (k = 0; k < BOARD_SIZE; k++)
-	for (l = 0; l< BOARD_SIZE; l++){
-		if (((attacker == BLACK) && (BLACK_TOOL(board[k][l]))) ||
-			((attacker == WHITE) && (WHITE_TOOL(board[k][l])))){
+	/* initialize repository */
+	rep->legalMoves = NULL;
+	rep->pos = 0; rep->size = 0;
+	//addRepToArrayOfReps(rep);
 
-			if ((board[k][l] == BLACK_P) || (board[k][l] == WHITE_P))
-			if (attacker == WHITE){
-				if ((k != 0) && (k - 1 == i) && (l == j - 1))
-					return 1;
-				if ((k != 7) && (k + 1 == i) && (l == j - 1))
-					return 1;
-			}
-			else{
-				if ((k != 0) && (k - 1 == i) && (l == j + 1))
-					return 1;
-				if ((k != 7) && (k + 1 == i) && (l == j + 1))
-					return 1;
+	getAllLegalMoves(board, attacker, rep, 0, 0);
 
-
-			}
-			else{ /* not pawns */
-				for (m = 0; m < offsets[pieceToNum(board[k][l])]; ++m)
-				for (n = l * 8 + k;;){
-					n = mailbox[mailbox64[n] + offset[pieceToNum(board[k][l])][m]];
-
-
-					if (n == -1)
-						break; /*moved outside of board */
-					if ((n % 8 == i) && ((int)(n / 8) == j))
-						return 1;
-					if (board[n % 8][(int)(n / 8)] != EMPTY)
-						break;
-
-					if (!slide[pieceToNum(board[k][l])]) /* if it doesnt slide */
-						break;
-				}
-			}
+	char * tempDest=malloc(3);
+	for (int i=0; i < rep->size; i++)
+	{
+		tempDest = strncpy(tempDest, rep->legalMoves[i] + 10, 3);
+		if ((board[tempDest[0] - 97][tempDest[2] - 49] == BLACK_K)
+			|| (board[tempDest[0] - 97][tempDest[2] - 49] == WHITE_K))
+		{
+			//free(tempDest);
+			return 1;
 		}
 	}
+	//free(tempDest);
+	return 0;
+
+	//int k, l, n, m;
+
+	//for (k = 0; k < BOARD_SIZE; k++)
+	//for (l = 0; l< BOARD_SIZE; l++){
+	//	if (((attacker == BLACK) && (BLACK_TOOL(board[k][l]))) ||
+	//		((attacker == WHITE) && (WHITE_TOOL(board[k][l])))){
+
+	//		if ((board[k][l] == BLACK_P) || (board[k][l] == WHITE_P))
+	//		if (attacker == WHITE){
+	//			if ((k != 0) && (k - 1 == i) && (l == j - 1))
+	//				return 1;
+	//			if ((k != 7) && (k + 1 == i) && (l == j - 1))
+	//				return 1;
+	//		}
+	//		else{
+	//			if ((k != 0) && (k - 1 == i) && (l == j + 1))
+	//				return 1;
+	//			if ((k != 7) && (k + 1 == i) && (l == j + 1))
+	//				return 1;
+
+
+	//		}
+	//		else{ /* not pawns */
+	//			for (m = 0; m < offsets[pieceToNum(board[k][l])]; ++m)
+	//			for (n = l * 8 + k;;){
+	//				n = mailbox[mailbox64[n] + offset[pieceToNum(board[k][l])][m]];
+
+
+	//				if (n == -1)
+	//					break; /*moved outside of board */
+	//				if ((n % 8 == i) && ((int)(n / 8) == j))
+	//					return 1;
+	//				if (board[n % 8][(int)(n / 8)] != EMPTY)
+	//					break;
+
+	//				if (!slide[pieceToNum(board[k][l])]) /* if it doesnt slide */
+	//					break;
+	//			}
+	//		}
+	//	}
+	/*}*/
 	return 0;
 
 }
