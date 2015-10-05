@@ -998,7 +998,7 @@ void getLegalMoves(char board[BOARD_SIZE][BOARD_SIZE], color player_color, check
 		case('k') :
 		case('K') :
 		{
-			for (int i = 0; i < 4; i++)
+			for (int i = 0; i < 8; i++)
 			{
 				dstChkr.x = srcChkr.x + kingMove[i].move[0];
 				dstChkr.y = srcChkr.y + kingMove[i].move[1];
